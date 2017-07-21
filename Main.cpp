@@ -1,3 +1,35 @@
+//////////////////////////////////////////////////////////////////////////
+// 
+// This native C++ Windows 10 console program tests Microsoft's new audio API : AudioGraph
+// AudioGraph is meant to relpace WASAPI for some
+// There seem to be many advantages to using AudoGraph over WASAPI
+// Having dealt with WASAPI for a number of years I can attest that it has, cough cough, issues.
+// AudioGraph is only available on Windows 10, bulid 14393 and up, so WASAPI must be used.
+// If you need a solid implemtation of WASAPI for pre 10, use JUCE (http://juce.com).
+// 
+// AudioGraph must be accessed from C++ using the super neat cppwinrt header library
+// Think of cppwinrt as a giant COM wrapper around all latest new Windows APIs
+// https://github.com/Microsoft/cppwinrt
+// Once you read the docs, it is pretty easy to convert most .net C# examples to native C++.
+// Go read the cppwinrt docs now or clowns will eat you. Now.
+// 
+// This example opens up the default audio input and output.
+// Then it listens to the input and pumps it back out to the output
+// All while generating a sine wave too
+// This lasts for a couple seconds and then the app quits
+// This example is meant for developers of audio apps.
+//
+// The sine wave tone is 100hz, if it sounds like this you are good
+// https://www.youtube.com/watch?v=yjySKMTDf18
+//
+// If it sounds sharp or full of pops, when then there could be a variety of issue
+// Most likely though you have a different sample rates for your input and output devices
+// you should make those sample rates match from the "Manage Audio Device" Windows Sound applet
+// AudioGraph makes this less painful, but I haven't got that far yet
+// This isn't audio production code and the software audio monitoring in this example is just an example
+// 
+//////////////////////////////////////////////////////////////////////////
+
 #include "pch.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -6,7 +38,9 @@
 // These headers wrap all that nasty COM code (flashback aka '94)
 // C++ programs can now easily access modern Windows APIs 
 // Afterthought: it is highly recommended that all of the documentation is read first
-// winrt can be located anywhere but I put in a sub dir called "winrt" in the project includes
+// winrt can be located anywhere but I put in a sub dir called "winrt" 
+// if you put the cppwinrt headers somewhere else, 
+// don't forget to update the project include search path
 #include "winrt/Windows.Foundation.h"
 #include "winrt/Windows.Media.Audio.h"
 #include "winrt/Windows.Media.MediaProperties.h"
@@ -239,9 +273,14 @@ private:
 
 				GenerateSineWave(output_data, output_channel_count, output_sample_count, output_sample_rate);
 
+				// this is NOT production ready
+				// it is possible to get a different number of input samples (0)
+				// direct monitoring can take care of this, this is just a test
+				// A mind is a terrible thing to taste
 				// route back to speakers
 				for (int s = 0; s < output_sample_count && s < input_sample_count; s++)
 				{
+					// only take the input first channel and make it stereo
 					output_data[s * output_channel_count] += input_data[s * input_channel_count];
 					output_data[s * output_channel_count + 1] += input_data[s * input_channel_count];
 				}
@@ -277,7 +316,6 @@ private:
 	//////////////////////////////////////////////////////////////////////////
 	void GenerateSineWave(float *data, int channel_count, int sample_count, double sample_rate)
 	{
-		// got the raw float pointer 
 		// render a sine wav to test for panning and signal integrity
 		const float pi = 3.14159265359f;
 		float target_frequency = 100.0f;
