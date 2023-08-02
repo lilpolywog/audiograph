@@ -45,17 +45,6 @@
 #include "winrt/Windows.Media.Audio.h"
 #include "winrt/Windows.Media.MediaProperties.h"
 
-
-//////////////////////////////////////////////////////////////////////////
-// must define this by hand
-// must come before using namespace stuff because IUnknown will be ambiguous
-MIDL_INTERFACE("5b0d3235-4dba-4d44-865e-8f1d0e4fd04d")
-
-IMemoryBufferByteAccess : IUnknown
-{
-	virtual HRESULT STDMETHODCALLTYPE GetBuffer(BYTE   **value, UINT32 *capacity);
-};
-
 //////////////////////////////////////////////////////////////////////////
 // notice the namespaces match the header file names
 using namespace winrt;
@@ -111,7 +100,7 @@ public:
 	{
 		Start();
 
-		Sleep(4000);
+		std::this_thread::sleep_for(std::chrono::milliseconds(4000));
 
 		Stop();
 	}
@@ -294,18 +283,7 @@ private:
 	float *GetDataPtrFromBuffer(AudioBuffer &buffer)
 	{
 		IMemoryBufferReference buffer_reference = buffer.CreateReference();
-
-		// this is where I'm stuck, this seems pretty good
-		com_ptr<IMemoryBufferByteAccess> byte_buffer_access;
-
-		// this cast is neat, thanks cppwinrt (not a C style cast at all)
-		// it actually queries this different interface behind the scenes
-		byte_buffer_access = buffer_reference.as<IMemoryBufferByteAccess>();
-
-		// Get the raw buffer from the AudioFrame
-		BYTE* data_byte_ptr = nullptr;
-		unsigned int byte_read = 0;
-		byte_buffer_access->GetBuffer(&data_byte_ptr, &byte_read);
+		uint8_t* data_byte_ptr = buffer_reference.data();
 
 		// Cast to float since the data we are generating is float
 		float* data_float_ptr = (float*)data_byte_ptr;
